@@ -1,5 +1,13 @@
 <template>
   <form id="movieForm" @submit.prevent="saveMovie">
+   <div v-if="successMessage" class="alert alert-success">
+      {{ successMessage }}
+    </div>
+    <ul v-if="errorMessages.length">
+      <li v-for="(error, index) in errorMessages" :key="index" class="alert alert-danger">
+        {{ error }}
+      </li>
+    </ul>
     <div class="form-group mb-3">
       <label for="title" class="form-label">Movie Title</label>
       <input type="text" name="title" class="form-control"  />
@@ -20,6 +28,8 @@
 import { ref, onMounted } from 'vue';
 
 let csrf_token = ref("");
+const successMessage = ref('');
+const errorMessages = ref([]);
 
 function getCsrfToken() {
   fetch('/api/v1/csrf-token')
@@ -27,7 +37,7 @@ function getCsrfToken() {
     .then((data) => {
       console.log(data);
       csrf_token.value = data.csrf_token;
-    })
+    });
 }
 
 onMounted(() => {
@@ -36,23 +46,31 @@ onMounted(() => {
 
 function saveMovie() {
   let movieForm = document.getElementById('movieForm');
-  let form_data = new FormData(movieForm); // Corrected variable name from uploadForm to movieForm
+  let formData = new FormData(movieForm);
+  
   fetch("/api/v1/movies", {
     method: 'POST',
-    body: form_data,
+    body: formData,
     headers: {
       'X-CSRFToken': csrf_token.value
     }
   })
-  .then(function (response) {
-    return response.json();
+  .then(response => response.json()) 
+  .then(data => {
+    if (data.errors) {
+      errorMessages.value = data.errors; 
+      successMessage.value = ''; 
+    } else {
+      successMessage.value = "Movie Successfully added";
+      errorMessages.value = []; 
+    }
   })
-  .then(function (data) {
-    // display a success message
-    console.log(data);
-  })
-  .catch(function (error) {
-    console.log(error);
-  });
 }
+
 </script>
+
+<style>
+.form-group {
+margin: 20px;
+}
+</style>

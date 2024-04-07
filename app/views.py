@@ -35,7 +35,7 @@ def movies():
              description = form.description.data,
              poster = filename
              ) 
-
+        
         db.session.add(new_movie)
         db.session.commit()
         movie_data = []
@@ -44,7 +44,29 @@ def movies():
     
     else:
         errors = form_errors(form)
+        print("Form Errors:", errors)
         return jsonify({"errors": errors})
+
+
+@app.route("/api/v1/movies", methods=['GET'])
+def add_movies():
+    movies = db.session.execute(db.select(Movie)).scalars()
+    movie_data = []
+    for movie in movies:
+        movie_data.append({
+            "id": movie.id,
+            "title": movie.title,
+            "description": movie.description,
+            "poster":  url_for('getImage', filename=movie.poster)
+        })
+    return jsonify({"movies":movie_data})
+
+
+
+
+@app.route("/api/v1/posters/<path:filename>")
+def getImage(filename):
+    return send_from_directory(os.path.join(os.getcwd(), app.config['UPLOAD_FOLDER']), filename)
 
 
 
